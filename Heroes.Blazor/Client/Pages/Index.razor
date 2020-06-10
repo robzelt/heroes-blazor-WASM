@@ -1,0 +1,86 @@
+﻿@page "/"
+
+@page "/Heroes"
+@using Heroes.Blazor.Shared
+
+
+
+
+@inject HeroService HeroService
+
+<list_header Title="Heroes" OnAdd="addHero"></list_header>
+<div>
+	@if (selectedHero == null)
+	{
+		<Heroes_List heroes="HeroService.Heroes" OnSelect="onSelectedHero" OnDelete=askToDelete />
+
+	}
+	else
+	{
+		<Hero_Detail hero="@selectedHero" OnCancelEdit=onCancelEdit OnSave=onSave />
+	}
+
+	<ModalWindow IsOpen="@ModalIsOpen" Message="@modalMessage" OnNo="closeModal" OnYes="deleteHero" />
+
+</div>
+
+
+@functions {
+	bool ModalIsOpen = false;
+
+	Hero selectedHero;
+	Hero heroToDelete = null;
+	string modalMessage = "";
+
+	void onSelectedHero(Hero hero)
+	{
+		selectedHero = hero;
+		StateHasChanged();
+	}
+	void onCancelEdit(Hero hero)
+	{
+		selectedHero = null;
+		StateHasChanged();
+	}
+	void onSave(Hero hero)
+	{
+		if (hero.Id != null)
+		{
+			HeroService.Heroes.First(i => i.Id == hero.Id).Name = hero.Name;
+			HeroService.Heroes.First(i => i.Id == hero.Id).Description = hero.Description;
+		}
+		else
+		{
+			hero.Id = hero.Name.Replace(" ", "").ToLower();
+			HeroService.Heroes.Add(hero);
+		}
+		selectedHero = null;
+		StateHasChanged();
+	}
+	void askToDelete(Hero targetToDelete)
+	{
+		ModalIsOpen = true;
+		modalMessage = $"Would you like to delete {targetToDelete.Name}?";
+		heroToDelete = targetToDelete;
+		StateHasChanged();
+	}
+	void closeModal()
+	{
+		heroToDelete = null;
+		ModalIsOpen = false;
+		StateHasChanged();
+	}
+	void deleteHero()
+	{
+		ModalIsOpen = false;
+		HeroService.Heroes.Remove(HeroService.Heroes.First(i => i.Id == heroToDelete.Id));
+		heroToDelete = null;
+		StateHasChanged();
+	}
+	void addHero()
+	{
+		selectedHero = new Hero();
+		StateHasChanged();
+
+	}
+}
